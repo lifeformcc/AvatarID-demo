@@ -91,8 +91,11 @@
       </div>
     </div>
   </body>
-  <script>
+  <script type="module">
+    import AvatarID from './AvatarID.js';
+
     const { createApp, ref, reactive, onMounted } = Vue;
+
     const app = createApp({
       setup() {
         const formState = reactive({
@@ -144,34 +147,27 @@
           formState.errMsg = '';
           formState.resultList = '';
 
-          await axios({
-            url: configs.value['host'][formState.env] + '/api/v2/avatarId/avatarList',
-            method: 'get',
-            headers: {
-              Authorization: configs.value['key'][formState.env]
-            },
-            params: {
-              account: formState.account,
-              contract: formState.contract,
-            }
+          const avatarID = new AvatarID({
+            key: configs.value['key'][formState.env],
+            env: formState.env,
+          });
 
-          })
+          await avatarID.getList(formState.account, formState.contract)
           .then(res => {
-            let data = res.data;
-            if(data.status == 10000) {
-              if(data.result) {
-                formState.resultList = data.result.items;
-                formState.total = data.result.total;
+            if(res.status == 10000) {
+              if(res.result) {
+                formState.resultList = res.result.items;
+                formState.total = res.result.total;
               }
               else {
                 formState.errMsg = '* Sorry, it seems like you‘re not on the list.';
               }
             }
-            else if(data.status == 10001) {
+            else if(res.status == 10001) {
               formState.errMsg = 'Invalid Address';
             }
             else {
-              formState.errMsg = 'Connection Failed[' + data.status + '], Please Try Later';
+              formState.errMsg = 'Connection Failed[' + res.status + '], Please Try Later';
             }
           })
           .catch(err => {
