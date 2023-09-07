@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="renderer" content="webkit"/>
+    <meta name="force-rendering" content="webkit"/>
+    <link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
+    <link rel="stylesheet" href="./assets/css/bootstrap.css" />
+    <link rel="stylesheet" href="./assets/css/style.css" />
+    <title>AVATARID DEMO</title>
+    <script src="./assets/js/lib/vue.global.prod.js"></script>
+    <script src="./assets/js/lib/axios.min.js"></script>
+    <script src="./assets/js/lib/web3.min.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div class="container">
+        <div class="min-vh-100">
+          <div class="w-100 pt-5 pb-5">
+            <div class="title-lg font-poppins-bold text-center">AVATARID</div>
+            <div class="row mt-4">
+              <div class="col-lg-8 mx-auto">
+                <code class="border bg-light p-3 small text-break text-black-50 d-block">
+                  <div>url: '{{configs.host[formState.env]}}/api/v2/avatarId/avatarList'</div>
+                  <div>method: GET</div>
+                  <div>
+                    <div>params: {</div>
+                      <div class="ps-3">
+                        <div>account: '{{formState.account}}',</div>
+                        <div>contract: '{{formState.contract}}'</div>
+                      </div>
+                    <div>}</div>
+                  </div>
+                  <div>
+                    <div>headers: {</div>
+                      <div class="ps-3">
+                        <div>Authorization: '{{configs.key[formState.env]}}'</div>
+                      </div>
+                    <div>}</div>
+                  </div>
+                </code>
+                <div class="mb-3 mt-4">
+                  <span>ENVIRONMENT: </span>
+                  <div class="form-check d-inline-block ms-2">
+                    <input class="form-check-input" type="radio" v-model="formState.env" value="prod" name="env" id="check-radio-prod">
+                    <label class="form-check-label" for="check-radio-prod">Production</label>
+                  </div>
+                  <div class="form-check d-inline-block ms-2">
+                    <input class="form-check-input" type="radio" v-model="formState.env" value="test" name="env" id="check-radio-test">
+                    <label class="form-check-label" for="check-radio-test">Test</label>
+                  </div>
+                </div>
+                <div class="text-start small">1. Put down the address(<span class="text-danger">*</span>require)</div>
+                <div class="text-start text-muted mb-1 small">e.g: 0x26BF9cF7AbE58d41Fc4Ed77983619e008F5ae9DF</div>
+                <input type="text" class="form-input w-100 form-control d-inline-block align-middle" v-model="formState.account" placeholder="Please put down the address here">
+                
+                <div class="text-start mt-4 mb-1 small">2. Put down the contract(default: Lifeform Avatar)</div>
+                <div class="text-start text-muted mb-1 small">e.g: {{configs.defaultContract[formState.env]}}</div>
+                <input type="text" class="form-input w-100 form-control d-inline-block align-middle" v-model="formState.contract" placeholder="Please put down the contract here">
+                
+                <button class="check-btn w-100 btn btn-dark mt-4 align-middle" type="button" @click="handleSearch">
+                  <span v-if="formState.loading" class="spinner-border spinner-border-sm me-2"></span>
+                  SEARCH
+                </button>
+              </div>
+            </div>
+            <div class="row mt-5">
+              <div class="col-lg-8 mx-auto">
+                <div class="text-center" style="min-height:30px;">
+                  <span v-if="formState.loading" class="spinner-border me-2"></span>
+                  <span v-else-if="formState.errMsg">{{ formState.errMsg }}</span>
+                  <div v-else-if="formState.resultList !== ''">
+                    <div class="fs-5 text-start">Items amount: <b>{{formState.total}}</b></div>
+                    <div class="mt-2 row">
+                      <template v-for="(item, i) in formState.resultList">
+                        <div v-if="i < 4" class="avatar-item col-3">
+                          <img class="w-100" :src="item.image" />
+                          <div class="small mt-1 text-truncate">{{item.name + ' #' + item.token_id}}</div>
+                        </div>
+                      </template>
+                    </div>
+                    <div v-if="formState.total > 4" class="mt-3 text-start text-muted">(...And other {{formState.total - 4}} item{{formState.total >= 4 ? 's' : ''}})</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script>
+    const { createApp, ref, reactive, onMounted } = Vue;
+    const app = createApp({
+      setup() {
+        const formState = reactive({
+          account: '',
+          contract: '',
+          errMsg: '',
+          resultList: '',
+          loading: false,
+          env: 'test',
+          total: 0,
+        });
+
+        const configs = ref({
+          host: {
+            'test': 'https://pandora-test.lifeform.cc/lifeform_bsc',
+            'prod': 'https://pandora.lifeform.cc/lifeform_bsc_prod'
+          },
+          key: {
+            'test': 'd0de8ea7-9759-43ce-bac1-0214239714b4',
+            'prod': ''
+          },
+          defaultContract: {
+            'test': '0x1794b37ea523dE5a2c5e7B9D71c1ca6464A4aE16',
+            'prod': '0x6f282fc910CD6eCdCcC9E0f06e6EA3e5602A24d5'
+          }
+        });
+
+        const handleSearch = async() => {
+          if(formState.loading) {
+            return;
+          }
+
+          if(formState.account == '') {
+            formState.errMsg = 'Please put down your address!';
+            return;
+          }
+
+          if(formState.account != '' && !Web3.utils.isAddress(formState.account)) {
+            formState.errMsg = 'Invalid account address';
+            return;
+          }
+
+          if(formState.contract != '' && !Web3.utils.isAddress(formState.contract)) {
+            formState.errMsg = 'Invalid contract address';
+            return;
+          }
+
+          formState.loading = true;
+          formState.errMsg = '';
+          formState.resultList = '';
+
+          await axios({
+            url: configs.value['host'][formState.env] + '/api/v2/avatarId/avatarList',
+            method: 'get',
+            headers: {
+              Authorization: configs.value['key'][formState.env]
+            },
+            params: {
+              account: formState.account,
+              contract: formState.contract,
+            }
+
+          })
+          .then(res => {
+            let data = res.data;
+            if(data.status == 10000) {
+              if(data.result) {
+                formState.resultList = data.result.items;
+                formState.total = data.result.total;
+              }
+              else {
+                formState.errMsg = '* Sorry, it seems like you‘re not on the list.';
+              }
+            }
+            else if(data.status == 10001) {
+              formState.errMsg = 'Invalid Address';
+            }
+            else {
+              formState.errMsg = 'Connection Failed[' + data.status + '], Please Try Later';
+            }
+          })
+          .catch(err => {
+            formState.errMsg = 'Connection Failed, Please Try Later';
+            console.log(err);
+          })
+
+          formState.loading = false;
+        }
+
+        onMounted(() => {
+        })
+
+        return {
+          formState,
+          configs,
+          handleSearch,
+        };
+      }
+    })
+
+    app.mount('#app');
+  </script>
+</html>
