@@ -1,7 +1,5 @@
 # AvatarID Demo
 
-### AvatarID is your visual DID
+AvatarID is a decentralized set of custom avatar protocols provided by Lifeform, and it allows users to customize their unique WEB3 avatars by holding NFTs (either 721 or 1155). In any EVM-compatible public blockchain environment, it is possible to obtain information about a user's avatar assets on the Binance Smart Chain (BSC) network or test network simply by using the user's address.
 
-Set that avatar as your DID by staking an Avatar. Through the same DID, you can log in to each of Lifeform’s ecosystem projects and display the corresponding role synchronously.
-
-Lifeform is working with many outstanding projects to integrate our SDK and provide more opportunities for our users to explore the partner ecosystem.
+# how to integrate
